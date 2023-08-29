@@ -2,32 +2,33 @@ package postgres
 
 import (
 	"avitoTask/internal/model"
+	"context"
 	"fmt"
 )
 
-func (c Client) CreateSegment(slug model.Slug) error {
+func (c Client) CreateSegment(ctx context.Context, slug model.Slug) error {
 	q := `
 		INSERT INTO
 		  segments(slug)
 		VALUES
 		  ($1)
 	`
-	if _, err := c.db.Exec(q, slug); err != nil {
+	if _, err := c.db.Exec(ctx, q, slug); err != nil {
 		return fmt.Errorf("failed to create segment column: %w", err)
 	}
 	return nil
 }
 
-func (c Client) DeleteSegment(slug model.Slug) error {
-	tx, err := c.db.Begin()
+func (c Client) DeleteSegment(ctx context.Context, slug model.Slug) error {
+	tx, err := c.db.Begin(ctx)
 	if err != nil {
 		return err
 	}
 	defer func() {
 		if err != nil {
-			tx.Rollback()
+			tx.Rollback(ctx)
 		} else {
-			tx.Commit()
+			tx.Commit(ctx)
 		}
 	}()
 
@@ -37,7 +38,7 @@ func (c Client) DeleteSegment(slug model.Slug) error {
 		WHERE
 		  slug = $1
 	`
-	if _, err := c.db.Exec(q, slug); err != nil {
+	if _, err := c.db.Exec(ctx, q, slug); err != nil {
 		return fmt.Errorf("failed to delete segment column: %w", err)
 	}
 	q = `
@@ -46,7 +47,7 @@ func (c Client) DeleteSegment(slug model.Slug) error {
 		WHERE
 		  slug = $1
 	`
-	if _, err := c.db.Exec(q, slug); err != nil {
+	if _, err := c.db.Exec(ctx, q, slug); err != nil {
 		return fmt.Errorf("failed to delete segment column: %w", err)
 	}
 

@@ -2,22 +2,19 @@ package postgres
 
 import (
 	"avitoTask/internal/db"
+	"context"
 	"fmt"
-	"github.com/jackc/pgx"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 type Client struct {
-	db *pgx.Conn
+	db *pgxpool.Pool
 }
 
 var _ db.DB = Client{}
 
 func NewClient(connectionString string) (*Client, error) {
-	connConfig, err := pgx.ParseConnectionString(connectionString)
-	if err != nil {
-		return nil, fmt.Errorf("failed to parse postgres connection string: %w", err)
-	}
-	conn, err := pgx.Connect(connConfig)
+	conn, err := pgxpool.New(context.TODO(), connectionString)
 	if err != nil {
 		return nil, fmt.Errorf("failed to connect to postgres: %w", err)
 	}
