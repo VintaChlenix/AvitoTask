@@ -98,7 +98,6 @@ func (c Client) segmentsExist(ctx context.Context, slugs []string) (bool, error)
 	for rows.Next() {
 		count++
 	}
-	fmt.Println(count, len(slugs))
 	if count != len(slugs) {
 		return false, nil
 	}
