@@ -1,13 +1,29 @@
 package postgres
 
 import (
-	"avitoTask/internal/model"
+	"avitoTask/internal/service"
+	"avitoTask/internal/types"
 	"context"
 	"fmt"
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-func (c Client) CreateUser(ctx context.Context, userID model.UserID, segmentsToAdd []model.Slug, segmentsToDelete []model.Slug) error {
+type UsersClient struct {
+	db *pgxpool.Pool
+}
+
+var _ service.UsersRepo = UsersClient{}
+
+func NewUsersClient(db *pgxpool.Pool) *UsersClient {
+	return &UsersClient{db: db}
+}
+
+func (c UsersClient) Close() {
+	c.db.Close()
+}
+
+func (c UsersClient) CreateUser(ctx context.Context, userID types.UserID, segmentsToAdd []types.Slug, segmentsToDelete []types.Slug) error {
 	tx, err := c.db.Begin(ctx)
 	if err != nil {
 		return err
@@ -78,7 +94,7 @@ func (c Client) CreateUser(ctx context.Context, userID model.UserID, segmentsToA
 	return nil
 }
 
-func (c Client) segmentsExist(ctx context.Context, slugs []string) (bool, error) {
+func (c UsersClient) segmentsExist(ctx context.Context, slugs []string) (bool, error) {
 	q := `
 		SELECT
 		  *
@@ -105,7 +121,7 @@ func (c Client) segmentsExist(ctx context.Context, slugs []string) (bool, error)
 	return true, nil
 }
 
-func (c Client) SelectActiveSegments(ctx context.Context, userID model.UserID) ([]model.Slug, error) {
+func (c UsersClient) SelectActiveSegments(ctx context.Context, userID types.UserID) ([]types.Slug, error) {
 	q := `
 		SELECT
 		  slug
@@ -120,9 +136,9 @@ func (c Client) SelectActiveSegments(ctx context.Context, userID model.UserID) (
 	}
 	defer rows.Close()
 
-	activeSegments := make([]model.Slug, 0)
+	activeSegments := make([]types.Slug, 0)
 	for rows.Next() {
-		var activeSegment model.Slug
+		var activeSegment types.Slug
 		if err := rows.Scan(&activeSegment); err != nil {
 			return nil, fmt.Errorf("failed to parse slug: %w", err)
 		}

@@ -1,14 +1,12 @@
-package app
+package http
 
 import (
-	"avitoTask/internal/dto"
+	"avitoTask/internal/types/dto"
 	"avitoTask/pkg/handlers"
-	"context"
-	"fmt"
 	"net/http"
 )
 
-func (a *App) CreateSegmentHandler(w http.ResponseWriter, r *http.Request) {
+func (a *app.App) CreateSegmentHandler(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
 	var request dto.CreateSegmentRequest
@@ -27,14 +25,7 @@ func (a *App) CreateSegmentHandler(w http.ResponseWriter, r *http.Request) {
 	handlers.RenderOK(w)
 }
 
-func (a *App) createSegmentHandler(ctx context.Context, request dto.CreateSegmentRequest) error {
-	if err := a.db.CreateSegment(ctx, request.Slug); err != nil {
-		return fmt.Errorf("failed to create segment: %w", err)
-	}
-	return nil
-}
-
-func (a *App) DeleteSegmentHandler(w http.ResponseWriter, r *http.Request) {
+func (a *app.App) DeleteSegmentHandler(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
 	var request dto.DeleteSegmentRequest
@@ -51,11 +42,4 @@ func (a *App) DeleteSegmentHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	handlers.RenderOK(w)
-}
-
-func (a *App) deleteSegmentHandler(ctx context.Context, request dto.DeleteSegmentRequest) error {
-	if err := a.db.DeleteSegment(ctx, request.Slug); err != nil {
-		return fmt.Errorf("failed to delete segment: %w", err)
-	}
-	return nil
 }

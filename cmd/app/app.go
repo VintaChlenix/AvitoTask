@@ -1,9 +1,8 @@
 package main
 
 import (
-	"avitoTask/configs"
-	"avitoTask/internal/app"
-	"avitoTask/internal/db/postgres"
+	"avitoTask/internal/delivery/app"
+	"avitoTask/internal/repo/postgres"
 	"fmt"
 	"go.uber.org/zap"
 	"net/http"
@@ -11,7 +10,7 @@ import (
 )
 
 func run(log *zap.SugaredLogger) error {
-	config, err := configs.GetConfig()
+	config, err := GetConfig()
 	if err != nil {
 		log.Panic(err.Error())
 	}

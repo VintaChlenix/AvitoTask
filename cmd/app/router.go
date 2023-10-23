@@ -1,7 +1,7 @@
 package main
 
 import (
-	"avitoTask/internal/app"
+	"avitoTask/internal/delivery/app"
 	"github.com/go-chi/chi/v5"
 )
 

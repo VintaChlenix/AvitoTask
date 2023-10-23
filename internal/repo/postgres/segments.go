@@ -1,12 +1,28 @@
 package postgres
 
 import (
-	"avitoTask/internal/model"
+	"avitoTask/internal/service"
+	"avitoTask/internal/types"
 	"context"
 	"fmt"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-func (c Client) CreateSegment(ctx context.Context, slug model.Slug) error {
+type SegmentsClient struct {
+	db *pgxpool.Pool
+}
+
+var _ service.SegmentsRepo = SegmentsClient{}
+
+func NewSegmentClient(db *pgxpool.Pool) *SegmentsClient {
+	return &SegmentsClient{db: db}
+}
+
+func (c SegmentsClient) Close() {
+	c.db.Close()
+}
+
+func (c SegmentsClient) CreateSegment(ctx context.Context, slug types.Slug) error {
 	q := `
 		INSERT INTO
 		  segments(slug)
@@ -19,7 +35,7 @@ func (c Client) CreateSegment(ctx context.Context, slug model.Slug) error {
 	return nil
 }
 
-func (c Client) DeleteSegment(ctx context.Context, slug model.Slug) error {
+func (c SegmentsClient) DeleteSegment(ctx context.Context, slug types.Slug) error {
 	tx, err := c.db.Begin(ctx)
 	if err != nil {
 		return err
