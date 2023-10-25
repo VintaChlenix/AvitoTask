@@ -1,9 +1,10 @@
 package service
 
 import (
-	"avitoTask/internal/types"
 	"context"
 	"fmt"
+
+	"avitoTask/internal/types"
 )
 
 type SegmentsRepo interface {
@@ -13,6 +14,10 @@ type SegmentsRepo interface {
 
 type SegmentsService struct {
 	repo SegmentsRepo
+}
+
+func NewSegmentsService(repo SegmentsRepo) *SegmentsService {
+	return &SegmentsService{repo: repo}
 }
 
 func (s *SegmentsService) CreateSegment(ctx context.Context, request types.CreateSegmentRequest) error {

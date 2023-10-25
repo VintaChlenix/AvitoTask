@@ -1,23 +1,43 @@
 package http
 
 import (
-	"avitoTask/internal/types/dto"
-	"avitoTask/pkg/handlers"
+	"context"
 	"net/http"
+
+	"avitoTask/internal/types"
+	"avitoTask/pkg/handlers"
+	"go.uber.org/zap"
 )
 
-func (a *app.App) CreateSegmentHandler(w http.ResponseWriter, r *http.Request) {
+type SegmentsService interface {
+	CreateSegment(ctx context.Context, request types.CreateSegmentRequest) error
+	DeleteSegment(ctx context.Context, request types.DeleteSegmentRequest) error
+}
+
+type SegmentsDelivery struct {
+	log     *zap.SugaredLogger
+	service SegmentsService
+}
+
+func NewSegmentsDelivery(log *zap.SugaredLogger, service SegmentsService) *SegmentsDelivery {
+	return &SegmentsDelivery{
+		log:     log,
+		service: service,
+	}
+}
+
+func (s *SegmentsDelivery) CreateSegmentHandler(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
-	var request dto.CreateSegmentRequest
+	var request types.CreateSegmentRequest
 	if err := handlers.UnmarshalJSON(r, &request); err != nil {
-		a.log.Errorf("failed to unmarshal request json: %v", err)
+		s.log.Errorf("failed to unmarshal request json: %v", err)
 		handlers.RenderBadRequest(w, err)
 		return
 	}
 
-	if err := a.createSegmentHandler(ctx, request); err != nil {
-		a.log.Errorf(err.Error())
+	if err := s.service.CreateSegment(ctx, request); err != nil {
+		s.log.Errorf(err.Error())
 		handlers.RenderInternalError(w, err)
 		return
 	}
@@ -25,18 +45,18 @@ func (a *app.App) CreateSegmentHandler(w http.ResponseWriter, r *http.Request) {
 	handlers.RenderOK(w)
 }
 
-func (a *app.App) DeleteSegmentHandler(w http.ResponseWriter, r *http.Request) {
+func (s *SegmentsDelivery) DeleteSegmentHandler(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
-	var request dto.DeleteSegmentRequest
+	var request types.DeleteSegmentRequest
 	if err := handlers.UnmarshalJSON(r, &request); err != nil {
-		a.log.Errorf("failed to unmarshal request json: %v", err)
+		s.log.Errorf("failed to unmarshal request json: %v", err)
 		handlers.RenderBadRequest(w, err)
 		return
 	}
 
-	if err := a.deleteSegmentHandler(ctx, request); err != nil {
-		a.log.Errorf(err.Error())
+	if err := s.service.DeleteSegment(ctx, request); err != nil {
+		s.log.Errorf(err.Error())
 		handlers.RenderInternalError(w, err)
 		return
 	}

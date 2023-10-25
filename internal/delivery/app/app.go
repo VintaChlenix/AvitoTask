@@ -1,20 +1,17 @@
 package app
 
 import (
-	"avitoTask/internal/repo"
-	"avitoTask/internal/service"
-	"go.uber.org/zap"
+	delivery "avitoTask/internal/delivery/handlers/http"
 )
 
 type App struct {
-	log      *zap.SugaredLogger
-	segments service.SegmentsService
-	users    service.UsersService
+	segments *delivery.SegmentsDelivery
+	users    *delivery.UsersDelivery
 }
 
-func NewApp(log *zap.SugaredLogger, db repo.DB) (*App, error) {
+func NewApp(segments *delivery.SegmentsDelivery, users *delivery.UsersDelivery) (*App, error) {
 	return &App{
-		log: log,
-		db:  db,
+		segments: segments,
+		users:    users,
 	}, nil
 }

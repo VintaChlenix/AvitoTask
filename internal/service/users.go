@@ -1,9 +1,10 @@
 package service
 
 import (
-	"avitoTask/internal/types"
 	"context"
 	"fmt"
+
+	"avitoTask/internal/types"
 )
 
 type UsersRepo interface {
@@ -13,6 +14,10 @@ type UsersRepo interface {
 
 type UsersService struct {
 	repo UsersRepo
+}
+
+func NewUsersService(repo UsersRepo) *UsersService {
+	return &UsersService{repo: repo}
 }
 
 func (u *UsersService) AddUser(ctx context.Context, request types.AddUserRequest) error {

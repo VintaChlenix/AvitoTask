@@ -1,29 +1,26 @@
 package postgres
 
 import (
-	"avitoTask/internal/service"
-	"avitoTask/internal/types"
 	"context"
 	"fmt"
+
+	"avitoTask/internal/service"
+	"avitoTask/internal/types"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-type UsersClient struct {
+type UsersRepo struct {
 	db *pgxpool.Pool
 }
 
-var _ service.UsersRepo = UsersClient{}
+var _ service.UsersRepo = UsersRepo{}
 
-func NewUsersClient(db *pgxpool.Pool) *UsersClient {
-	return &UsersClient{db: db}
+func NewUsersRepo(db *pgxpool.Pool) *UsersRepo {
+	return &UsersRepo{db: db}
 }
 
-func (c UsersClient) Close() {
-	c.db.Close()
-}
-
-func (c UsersClient) CreateUser(ctx context.Context, userID types.UserID, segmentsToAdd []types.Slug, segmentsToDelete []types.Slug) error {
+func (c UsersRepo) CreateUser(ctx context.Context, userID types.UserID, segmentsToAdd []types.Slug, segmentsToDelete []types.Slug) error {
 	tx, err := c.db.Begin(ctx)
 	if err != nil {
 		return err
@@ -94,7 +91,7 @@ func (c UsersClient) CreateUser(ctx context.Context, userID types.UserID, segmen
 	return nil
 }
 
-func (c UsersClient) segmentsExist(ctx context.Context, slugs []string) (bool, error) {
+func (c UsersRepo) segmentsExist(ctx context.Context, slugs []string) (bool, error) {
 	q := `
 		SELECT
 		  *
@@ -121,7 +118,7 @@ func (c UsersClient) segmentsExist(ctx context.Context, slugs []string) (bool, e
 	return true, nil
 }
 
-func (c UsersClient) SelectActiveSegments(ctx context.Context, userID types.UserID) ([]types.Slug, error) {
+func (c UsersRepo) SelectActiveSegments(ctx context.Context, userID types.UserID) ([]types.Slug, error) {
 	q := `
 		SELECT
 		  slug
