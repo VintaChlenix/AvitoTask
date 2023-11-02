@@ -2,35 +2,37 @@ package postgres
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
-	"avitoTask/internal/service"
-	"avitoTask/internal/types"
+	"avitoTask/internal/slugs/service"
+	types2 "avitoTask/internal/slugs/types"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-type UsersRepo struct {
+type UserDB struct {
 	db *pgxpool.Pool
 }
 
-var _ service.UsersRepo = UsersRepo{}
+var _ service.UserRepo = UserDB{}
 
-func NewUsersRepo(db *pgxpool.Pool) *UsersRepo {
-	return &UsersRepo{db: db}
+func NewUsersRepo(db *pgxpool.Pool) *UserDB {
+	return &UserDB{db: db}
 }
 
-func (c UsersRepo) CreateUser(ctx context.Context, userID types.UserID, segmentsToAdd []types.Slug, segmentsToDelete []types.Slug) error {
+func (c UserDB) CreateUser(ctx context.Context, userID types2.UserID, segmentsToAdd []types2.Slug, segmentsToDelete []types2.Slug) error {
 	tx, err := c.db.Begin(ctx)
 	if err != nil {
 		return err
 	}
 	defer func() {
-		if err != nil {
-			tx.Rollback(ctx)
-		} else {
-			tx.Commit(ctx)
+		if err == nil {
+			err = tx.Commit(ctx)
+			return
 		}
+
+		err = errors.Join(err, tx.Rollback(ctx))
 	}()
 
 	if len(segmentsToAdd) != 0 {
@@ -46,11 +48,11 @@ func (c UsersRepo) CreateUser(ctx context.Context, userID types.UserID, segments
 			return fmt.Errorf("trying to insert non existing segments: %w", err)
 		}
 		q := `
-		INSERT INTO
-		  users_segments(user_id, slug)
-		VALUES
-		  ($1, $2)
-		ON CONFLICT DO NOTHING
+INSERT INTO
+  users_segments(user_id, slug)
+VALUES
+  ($1, $2)
+ON CONFLICT DO NOTHING
 	`
 		batch := &pgx.Batch{}
 		for _, slugToAdd := range slugsToAdd {
@@ -78,10 +80,10 @@ func (c UsersRepo) CreateUser(ctx context.Context, userID types.UserID, segments
 			return fmt.Errorf("trying to delete non existing segments: %w", err)
 		}
 		q := `
-		DELETE FROM
-		  users_segments
-		WHERE
-		  user_id = $1 AND slug = any($2)
+DELETE FROM
+  users_segments
+WHERE
+  user_id = $1 AND slug = any($2)
 	`
 		if _, err := c.db.Exec(ctx, q, userID, slugsToDelete); err != nil {
 			return fmt.Errorf("failed to insert user segments: %w", err)
@@ -91,14 +93,14 @@ func (c UsersRepo) CreateUser(ctx context.Context, userID types.UserID, segments
 	return nil
 }
 
-func (c UsersRepo) segmentsExist(ctx context.Context, slugs []string) (bool, error) {
+func (c UserDB) segmentsExist(ctx context.Context, slugs []string) (bool, error) {
 	q := `
-		SELECT
-		  *
-		FROM
-		  segments
-		WHERE
-		  slug = any($1)
+SELECT
+  *
+FROM
+  segments
+WHERE
+  slug = any($1)
 	`
 
 	rows, err := c.db.Query(ctx, q, slugs)
@@ -118,14 +120,14 @@ func (c UsersRepo) segmentsExist(ctx context.Context, slugs []string) (bool, err
 	return true, nil
 }
 
-func (c UsersRepo) SelectActiveSegments(ctx context.Context, userID types.UserID) ([]types.Slug, error) {
+func (c UserDB) SelectActiveSegments(ctx context.Context, userID types2.UserID) ([]types2.Slug, error) {
 	q := `
-		SELECT
-		  slug
-		FROM
-		  users_segments
-		WHERE
-		  user_id = $1
+SELECT
+  slug
+FROM
+  users_segments
+WHERE
+  user_id = $1
 	`
 	rows, err := c.db.Query(ctx, q, userID)
 	if err != nil {
@@ -133,9 +135,9 @@ func (c UsersRepo) SelectActiveSegments(ctx context.Context, userID types.UserID
 	}
 	defer rows.Close()
 
-	activeSegments := make([]types.Slug, 0)
+	activeSegments := make([]types2.Slug, 0)
 	for rows.Next() {
-		var activeSegment types.Slug
+		var activeSegment types2.Slug
 		if err := rows.Scan(&activeSegment); err != nil {
 			return nil, fmt.Errorf("failed to parse slug: %w", err)
 		}

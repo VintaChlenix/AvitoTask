@@ -1,6 +1,7 @@
-package main
+package config
 
 import (
+	"errors"
 	"fmt"
 	"os"
 
@@ -16,19 +17,24 @@ type Config struct {
 	} `yaml:"database"`
 }
 
-func GetConfig() (*Config, error) {
-	f, err := os.Open("configs/config.yml")
+func GetConfig(path string) (cfg *Config, err error) {
+	f, err := os.Open(path)
 	if err != nil {
 		return nil, fmt.Errorf("failed to open config file: %w", err)
 	}
-	defer f.Close()
+	defer func() {
+		ferr := f.Close()
+		if ferr == nil {
+			return
+		}
+		err = errors.Join(ferr, err)
+	}()
 
-	var cfg Config
 	decoder := yaml.NewDecoder(f)
 	err = decoder.Decode(&cfg)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse config file: %w", err)
 	}
 
-	return &cfg, nil
+	return cfg, nil
 }

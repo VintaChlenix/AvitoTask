@@ -2,29 +2,30 @@ package postgres
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
-	"avitoTask/internal/service"
-	"avitoTask/internal/types"
+	"avitoTask/internal/slugs/service"
+	"avitoTask/internal/slugs/types"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-type SegmentsRepo struct {
+type SegmentDB struct {
 	db *pgxpool.Pool
 }
 
-var _ service.SegmentsRepo = SegmentsRepo{}
+var _ service.SegmentRepo = SegmentDB{}
 
-func NewSegmentsRepo(db *pgxpool.Pool) *SegmentsRepo {
-	return &SegmentsRepo{db: db}
+func NewSegmentsRepo(db *pgxpool.Pool) *SegmentDB {
+	return &SegmentDB{db: db}
 }
 
-func (c SegmentsRepo) CreateSegment(ctx context.Context, slug types.Slug) error {
+func (c SegmentDB) CreateSegment(ctx context.Context, slug types.Slug) error {
 	q := `
-		INSERT INTO
-		  segments(slug)
-		VALUES
-		  ($1)
+INSERT INTO
+  segments(slug)
+VALUES
+  ($1)
 	`
 	if _, err := c.db.Exec(ctx, q, slug); err != nil {
 		return fmt.Errorf("failed to create segment column: %w", err)
@@ -32,33 +33,34 @@ func (c SegmentsRepo) CreateSegment(ctx context.Context, slug types.Slug) error 
 	return nil
 }
 
-func (c SegmentsRepo) DeleteSegment(ctx context.Context, slug types.Slug) error {
+func (c SegmentDB) DeleteSegment(ctx context.Context, slug types.Slug) error {
 	tx, err := c.db.Begin(ctx)
 	if err != nil {
 		return err
 	}
 	defer func() {
-		if err != nil {
-			tx.Rollback(ctx)
-		} else {
-			tx.Commit(ctx)
+		if err == nil {
+			err = tx.Commit(ctx)
+			return
 		}
+
+		err = errors.Join(err, tx.Rollback(ctx))
 	}()
 
 	q := `
-		DELETE FROM
-		  segments
-		WHERE
-		  slug = $1
+DELETE FROM
+  segments
+WHERE
+  slug = $1
 	`
 	if _, err := c.db.Exec(ctx, q, slug); err != nil {
 		return fmt.Errorf("failed to delete segment column: %w", err)
 	}
 	q = `
-		DELETE FROM
-		  users_segments
-		WHERE
-		  slug = $1
+DELETE FROM
+  users_segments
+WHERE
+  slug = $1
 	`
 	if _, err := c.db.Exec(ctx, q, slug); err != nil {
 		return fmt.Errorf("failed to delete segment column: %w", err)
