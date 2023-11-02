@@ -21,7 +21,7 @@ func NewUsersRepo(db *pgxpool.Pool) *UserDB {
 	return &UserDB{db: db}
 }
 
-func (c UserDB) CreateUser(ctx context.Context, userID types2.UserID, segmentsToAdd []types2.Slug, segmentsToDelete []types2.Slug) error {
+func (c UserDB) CreateUser(ctx context.Context, userID types2.UserID, segmentsToAdd []types2.Slug, segmentsToDelete []types2.Slug) (err error) {
 	tx, err := c.db.Begin(ctx)
 	if err != nil {
 		return err

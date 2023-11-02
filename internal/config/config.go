@@ -23,11 +23,7 @@ func GetConfig(path string) (cfg *Config, err error) {
 		return nil, fmt.Errorf("failed to open config file: %w", err)
 	}
 	defer func() {
-		ferr := f.Close()
-		if ferr == nil {
-			return
-		}
-		err = errors.Join(ferr, err)
+		err = errors.Join(err, f.Close())
 	}()
 
 	decoder := yaml.NewDecoder(f)

@@ -33,7 +33,7 @@ VALUES
 	return nil
 }
 
-func (c SegmentDB) DeleteSegment(ctx context.Context, slug types.Slug) error {
+func (c SegmentDB) DeleteSegment(ctx context.Context, slug types.Slug) (err error) {
 	tx, err := c.db.Begin(ctx)
 	if err != nil {
 		return err
