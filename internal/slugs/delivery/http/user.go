@@ -15,15 +15,13 @@ type UserService interface {
 	UserActiveSegments(ctx context.Context, request types.ActiveUserSegmentsRequest) (*types.ActiveUserSegmentsResponse, error)
 }
 
-type UserHandler struct {
-	log     *slog.Logger
+type User struct {
 	service UserService
 	router  chi.Router
 }
 
-func NewUserHandler(log *slog.Logger, service UserService) *UserHandler {
-	h := &UserHandler{
-		log:     log,
+func NewUser(service UserService) *User {
+	h := &User{
 		service: service,
 		router:  chi.NewRouter(),
 	}
@@ -34,22 +32,22 @@ func NewUserHandler(log *slog.Logger, service UserService) *UserHandler {
 	return h
 }
 
-func (u UserHandler) Handler() http.Handler {
+func (u User) Handler() http.Handler {
 	return u.router
 }
 
-func (u *UserHandler) AddUserHandler(w http.ResponseWriter, r *http.Request) {
+func (u *User) AddUserHandler(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
 	var request types.AddUserRequest
 	if err := handlers.UnmarshalJSON(r, &request); err != nil {
-		u.log.Error("failed to unmarshal request json: %v", err)
+		slog.Error("failed to unmarshal request json: %v", err)
 		handlers.RenderBadRequest(w, err)
 		return
 	}
 
 	if err := u.service.AddUser(ctx, request); err != nil {
-		u.log.Error(err.Error())
+		slog.Error(err.Error())
 		handlers.RenderInternalError(w, err)
 		return
 	}
@@ -57,19 +55,19 @@ func (u *UserHandler) AddUserHandler(w http.ResponseWriter, r *http.Request) {
 	handlers.RenderOK(w)
 }
 
-func (u *UserHandler) UserActiveSegmentsHandler(w http.ResponseWriter, r *http.Request) {
+func (u *User) UserActiveSegmentsHandler(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
 	var request types.ActiveUserSegmentsRequest
 	if err := handlers.UnmarshalJSON(r, &request); err != nil {
-		u.log.Error("failed to unmarshal request json: %v", err)
+		slog.Error("failed to unmarshal request json: %v", err)
 		handlers.RenderBadRequest(w, err)
 		return
 	}
 
 	response, err := u.service.UserActiveSegments(ctx, request)
 	if err != nil {
-		u.log.Error(err.Error())
+		slog.Error(err.Error())
 		handlers.RenderBadRequest(w, err)
 		return
 	}

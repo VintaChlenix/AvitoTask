@@ -5,22 +5,19 @@ import (
 	"errors"
 	"fmt"
 
-	"avitoTask/internal/slugs/service"
 	"avitoTask/internal/slugs/types"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-type SegmentDB struct {
+type Segment struct {
 	db *pgxpool.Pool
 }
 
-var _ service.SegmentRepo = SegmentDB{}
-
-func NewSegmentsRepo(db *pgxpool.Pool) *SegmentDB {
-	return &SegmentDB{db: db}
+func NewSegment(db *pgxpool.Pool) *Segment {
+	return &Segment{db: db}
 }
 
-func (c SegmentDB) CreateSegment(ctx context.Context, slug types.Slug) error {
+func (c Segment) CreateSegment(ctx context.Context, slug types.Slug) error {
 	q := `
 INSERT INTO
   segments(slug)
@@ -33,7 +30,7 @@ VALUES
 	return nil
 }
 
-func (c SegmentDB) DeleteSegment(ctx context.Context, slug types.Slug) (err error) {
+func (c Segment) DeleteSegment(ctx context.Context, slug types.Slug) (err error) {
 	tx, err := c.db.Begin(ctx)
 	if err != nil {
 		return err

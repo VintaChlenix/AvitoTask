@@ -8,6 +8,8 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
+const PATH = "config/config.yml"
+
 type Config struct {
 	Server struct {
 		URL string `yaml:"SERVER_URL"`

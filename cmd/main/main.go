@@ -11,18 +11,18 @@ import (
 	"syscall"
 
 	"avitoTask/internal/config"
-	handlers "avitoTask/internal/slugs/delivery/handlers/http"
+	handlers "avitoTask/internal/slugs/delivery/http"
 	"avitoTask/internal/slugs/repo/postgres"
 	"avitoTask/internal/slugs/service"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"golang.org/x/sync/errgroup"
 )
 
-func run(log *slog.Logger) error {
+func run() error {
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
 
-	cfg, err := config.GetConfig("config/config.yml")
+	cfg, err := config.GetConfig(config.PATH)
 	if err != nil {
 		return err
 	}
@@ -33,9 +33,9 @@ func run(log *slog.Logger) error {
 	}
 	defer dbClient.Close()
 
-	segmentDelivery := handlers.NewSegmentHandler(log, service.NewSegmentsService(postgres.NewSegmentsRepo(dbClient)))
-	userDelivery := handlers.NewUserHandler(log, service.NewUsersService(postgres.NewUsersRepo(dbClient)))
-	log.Info("app initialized")
+	segmentDelivery := handlers.NewSegment(service.NewSegment(postgres.NewSegment(dbClient)))
+	userDelivery := handlers.NewUser(service.NewUser(postgres.NewUser(dbClient)))
+	slog.Info("app initialized")
 
 	http.Handle("/api/segment/", segmentDelivery.Handler())
 	http.Handle("/api/user/", userDelivery.Handler())
@@ -47,7 +47,7 @@ func run(log *slog.Logger) error {
 	eg, ctx := errgroup.WithContext(ctx)
 
 	eg.Go(func() error {
-		log.Info("Starting server on: %s", cfg.Server.URL)
+		slog.Info("Starting server on: %s", cfg.Server.URL)
 		lerr := srv.ListenAndServe()
 		if errors.Is(lerr, http.ErrServerClosed) {
 			return nil
@@ -65,14 +65,14 @@ func run(log *slog.Logger) error {
 		return err
 	}
 
-	log.Info("Shutdown app")
+	slog.Info("Shutdown app")
 	return nil
 }
 
 func main() {
-	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
-	if err := run(logger); err != nil {
-		logger.Error(err.Error())
+	slog.SetDefault(slog.New(slog.NewJSONHandler(os.Stdout, nil)))
+	if err := run(); err != nil {
+		slog.Error(err.Error())
 		os.Exit(1)
 	}
 }

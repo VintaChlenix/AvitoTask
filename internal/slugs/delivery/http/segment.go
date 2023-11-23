@@ -15,15 +15,13 @@ type SegmentService interface {
 	DeleteSegment(ctx context.Context, request types.DeleteSegmentRequest) error
 }
 
-type SegmentHandler struct {
-	log     *slog.Logger
+type Segment struct {
 	service SegmentService
 	router  chi.Router
 }
 
-func NewSegmentHandler(log *slog.Logger, service SegmentService) *SegmentHandler {
-	h := &SegmentHandler{
-		log:     log,
+func NewSegment(service SegmentService) *Segment {
+	h := &Segment{
 		service: service,
 		router:  chi.NewRouter(),
 	}
@@ -34,22 +32,22 @@ func NewSegmentHandler(log *slog.Logger, service SegmentService) *SegmentHandler
 	return h
 }
 
-func (s *SegmentHandler) Handler() http.Handler {
+func (s *Segment) Handler() http.Handler {
 	return s.router
 }
 
-func (s *SegmentHandler) CreateSegmentHandler(w http.ResponseWriter, r *http.Request) {
+func (s *Segment) CreateSegmentHandler(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
 	var request types.CreateSegmentRequest
 	if err := handlers.UnmarshalJSON(r, &request); err != nil {
-		s.log.Error("failed to unmarshal request json: %v", err)
+		slog.Error("failed to unmarshal request json: %v", err)
 		handlers.RenderBadRequest(w, err)
 		return
 	}
 
 	if err := s.service.CreateSegment(ctx, request); err != nil {
-		s.log.Error(err.Error())
+		slog.Error(err.Error())
 		handlers.RenderInternalError(w, err)
 		return
 	}
@@ -57,18 +55,18 @@ func (s *SegmentHandler) CreateSegmentHandler(w http.ResponseWriter, r *http.Req
 	handlers.RenderOK(w)
 }
 
-func (s *SegmentHandler) DeleteSegmentHandler(w http.ResponseWriter, r *http.Request) {
+func (s *Segment) DeleteSegmentHandler(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
 	var request types.DeleteSegmentRequest
 	if err := handlers.UnmarshalJSON(r, &request); err != nil {
-		s.log.Error("failed to unmarshal request json: %v", err)
+		slog.Error("failed to unmarshal request json: %v", err)
 		handlers.RenderBadRequest(w, err)
 		return
 	}
 
 	if err := s.service.DeleteSegment(ctx, request); err != nil {
-		s.log.Error(err.Error())
+		slog.Error(err.Error())
 		handlers.RenderInternalError(w, err)
 		return
 	}

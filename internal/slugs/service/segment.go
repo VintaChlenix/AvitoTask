@@ -12,22 +12,22 @@ type SegmentRepo interface {
 	DeleteSegment(ctx context.Context, slug types.Slug) error
 }
 
-type SegmentStore struct {
+type Segment struct {
 	repo SegmentRepo
 }
 
-func NewSegmentsService(repo SegmentRepo) *SegmentStore {
-	return &SegmentStore{repo: repo}
+func NewSegment(repo SegmentRepo) *Segment {
+	return &Segment{repo: repo}
 }
 
-func (s *SegmentStore) CreateSegment(ctx context.Context, request types.CreateSegmentRequest) error {
+func (s *Segment) CreateSegment(ctx context.Context, request types.CreateSegmentRequest) error {
 	if err := s.repo.CreateSegment(ctx, request.Slug); err != nil {
 		return fmt.Errorf("failed to create segment: %w", err)
 	}
 	return nil
 }
 
-func (s *SegmentStore) DeleteSegment(ctx context.Context, request types.DeleteSegmentRequest) error {
+func (s *Segment) DeleteSegment(ctx context.Context, request types.DeleteSegmentRequest) error {
 	if err := s.repo.DeleteSegment(ctx, request.Slug); err != nil {
 		return fmt.Errorf("failed to delete segment: %w", err)
 	}
