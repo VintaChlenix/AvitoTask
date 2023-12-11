@@ -1,10 +1,14 @@
-package configs
+package config
 
 import (
+	"errors"
 	"fmt"
-	"gopkg.in/yaml.v3"
 	"os"
+
+	"gopkg.in/yaml.v3"
 )
+
+const PATH = "config/config.yml"
 
 type Config struct {
 	Server struct {
@@ -15,19 +19,20 @@ type Config struct {
 	} `yaml:"database"`
 }
 
-func GetConfig() (*Config, error) {
-	f, err := os.Open("configs/config.yml")
+func GetConfig(path string) (cfg *Config, err error) {
+	f, err := os.Open(path)
 	if err != nil {
 		return nil, fmt.Errorf("failed to open config file: %w", err)
 	}
-	defer f.Close()
+	defer func() {
+		err = errors.Join(err, f.Close())
+	}()
 
-	var cfg Config
 	decoder := yaml.NewDecoder(f)
 	err = decoder.Decode(&cfg)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse config file: %w", err)
 	}
 
-	return &cfg, nil
+	return cfg, nil
 }
